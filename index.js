@@ -1,27 +1,43 @@
 
-//const util = require('util');
-const http = require('http');
-const HTMLParser = require('node-html-parser');
+import fetch from 'node-fetch';
+import HTMLParser from 'node-html-parser';
+import crypto from 'crypto';
+import fs from 'fs';
 
-const cveurl='https://support.confluent.io/hc/en-us/sections/360008413952-Security-Advisories-and-Security-Release-Notes';
+let cveurl='https://support.confluent.io/hc/en-us/sections/360008413952-Security-Advisories-and-Security-Release-Notes';
 
-const getoptions= {
-    "host": "support.confluent.io",
-    "port": 443,
-    "path": "/hc/en-us/sections/360008413952-Security-Advisories-and-Security-Release-Notes"
-};
-let content = "";
-let finished = false;
-let req = http.request(options, function(res) {
-    res.setEncoding("utf8");
-    res.on("data", function (chunk) {
-        content += chunk;
-    });
+let outputFile = null;
 
-    res.on("end", function () {
-    //    util.log(content);
-    });
-});
+if(process.argv.length>2){
+    cveurl = process.argv[2];
+}
+if(process.argv.length>3){
+    outputFile = process.argv[3];
+}
 
-req.end();
-let root = HTMLParser.parse('<ul id="list"><li>Hello World</li></ul>');
+(async () => {
+    let result={
+        "sourceurl":cveurl,
+        "articlecount":0,
+        "md5hash":0,
+        "date": new Date().toISOString()
+    };
+    try {
+        const response = await fetch(cveurl);
+        const body = await response.text();
+        let root = HTMLParser.parse(body);
+        let quench = root.querySelector('.article-list').toString();
+        result.articlecount = root.querySelectorAll('.article-list .article-list-item').length;
+        result.md5hash = crypto.createHash('md5').update(quench).digest('hex');
+        if(outputFile == null){
+            console.log(JSON.stringify(result,null,3));
+        }else{
+            fs.writeFileSync(outputFile,JSON.stringify(result,null,3));
+        }
+    } catch (e) {
+        console.error(e);
+        process.exit(1)
+        // Deal with the fact the chain failed
+    }
+    // `text` is not available here
+})();
