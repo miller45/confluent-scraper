@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scrapeanddump": "index.js https://support.confluent.io/hc/en-us/sections/360008413952-Security-Advisories-and-Security-Release-Notes stamp.json"
   },
   "keywords": [],
   "author": "",
